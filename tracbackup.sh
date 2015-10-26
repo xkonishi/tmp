@@ -1,35 +1,38 @@
-!/bin/sh
+#!/bin/sh
 
-TRAC_PROJ_DIR=/trac
-TRAC_PROJS="aries ariesoperation progner progneroperation"
-BACKUP_DIR=/mnt/TracBackup
-TODAY_DIR=`date '+%Y%m%d'`
+TRAC_DIR=/trac
+TRAC_PJ_NAME="aries ariesoperation progner progneroperation"
+
+MT_DIR=$HOME/backup
+TODAY=`date '+%Y%m%d'`
 MAX_DAY_DIR=`date -d "7 day ago" +%Y%m%d`
 
-# mount "hotei"
-/bin/mount|grep $BACKUP_DIR >/dev/null
-if [ $? -ne 0 ]; then
-  /bin/mount -t cifs //hotei/Public/TracBackup $BACKUP_DIR -o password=
+# create mount directory
+if [ ! -e $MT_DIR ]; then
+  mkdir $MT_DIR
 fi
 
-# make backup directory
-if [ -a $BACKUP_DIR/$TODAY_DIR ]; then
-  rm -rf $BACKUP_DIR/$TODAY_DIR >/dev/null 2>&1
+# mount "hotei"
+mount|grep $MT_DIR >/dev/null
+if [ $? -ne 0 ]; then
+  sudo mount -t cifs -o username=prognerex,password=zaq12wsx //hotei/Public/TracBackup $MT_DIR
 fi
-mkdir $BACKUP_DIR/$TODAY_DIR >/dev/null
+
+# check backup directory
+if [ -e $MT_DIR/$TODAY ]; then
+  sudo rm -rf $MT_DIR/$TODAY
+fi
 
 # backup trac project
-for proj in $TRAC_PROJS
+for proj in $TRAC_PJ_NAME
 do
-  #echo $proj
-  trac-admin $TRAC_PROJ_DIR/$proj hotcopy $BACKUP_DIR/$TODAY_DIR/$proj
+  sudo trac-admin $TRAC_DIR/$proj hotcopy $MT_DIR/$TODAY/$proj
 done
 
 # remove directory
-for dir in `ls $BACKUP_DIR -r`
+for dir in `ls $MT_DIR -r`
 do
-  #echo $dir
   if [ $dir -le $MAX_DAY_DIR ]; then
-    rm -rf $BACKUP_DIR/$dir
+    sudo rm -rf $MT_DIR/$dir
   fi
 done
