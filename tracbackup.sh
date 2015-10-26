@@ -16,6 +16,10 @@ fi
 mount|grep $MT_DIR >/dev/null
 if [ $? -ne 0 ]; then
   sudo mount -t cifs -o username=prognerex,password=zaq12wsx //hotei/Public/TracBackup $MT_DIR
+  if [ $? -ne 0 ]; then
+    echo mount error!!
+    exit 1
+  fi
 fi
 
 # check backup directory
@@ -36,3 +40,6 @@ do
     sudo rm -rf $MT_DIR/$dir
   fi
 done
+
+# umount "hotei"
+sudo umount $MT_DIR
