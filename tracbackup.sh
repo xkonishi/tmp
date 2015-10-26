@@ -5,7 +5,7 @@ TRAC_PJ_NAME="aries ariesoperation progner progneroperation"
 
 MT_DIR=$HOME/backup
 TODAY=`date '+%Y%m%d'`
-MAX_DAY_DIR=`date -d "7 day ago" +%Y%m%d`
+MAX_DAY=`date -d "7 day ago" +%Y%m%d`
 
 # create mount directory
 if [ ! -e $MT_DIR ]; then
@@ -36,7 +36,7 @@ done
 # remove directory
 for dir in `ls $MT_DIR -r`
 do
-  if [ $dir -le $MAX_DAY_DIR ]; then
+  if [ $dir -le $MAX_DAY ]; then
     sudo rm -rf $MT_DIR/$dir
   fi
 done
