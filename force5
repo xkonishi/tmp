@@ -1,0 +1,1222 @@
+演習①
+System.debug('出力する文字列、変数など');
+system.debug('★logging'+UserInfo.getFirstName());
+System.debug(UserInfo.getName());
+System.debug(UserInfo.getUserId());
+
+
+演習②
+Set<Integer> intSet = new Set<Integer>();
+intSet.add(47);
+intSet.add(42);
+intSet.add(101);
+Integer intSetSize = intSet.size();
+System.debug(intSetSize);
+System.debug(intSet.contains(47));
+intSet.remove(47);
+System.debug(intSet.contains(47));
+
+
+演習③
+Datetime myDate = DateTime.Now();
+
+String week = myDate.format('E');
+if(week == 'Sun'){
+     System.debug('日');
+}else if(week =='Mon'){
+     System.debug('月');
+}else if(week =='Tue'){
+     System.debug('火');
+}else if(week =='Wed'){
+     System.debug('水');
+}else if(week =='Thu'){
+     System.debug('木');
+}else if(week =='Fri'){
+     System.debug('金');
+}else if(week =='Sat'){
+     System.debug('土');
+}
+
+
+演習④
+List<Contact> contacts =[Select Name, Phone from Contact];
+for (Contact currentContact : contacts){
+	String contactName = currentContact.Name;
+	String contactPhone = currentContact.Phone;
+	System.debug('名前：' + contactName + ',電話：' + contactPhone);
+}
+
+
+演習⑤
+List<Contact> contacts =[Select Name, Phone from Contact Order by Phone];
+for (Contact currentContact : contacts){
+	String contactName = currentContact.Name;
+	String contactPhone = currentContact.Phone;
+	System.debug('電話：' + contactPhone + '名前：' + contactName);
+}
+
+
+演習⑥
+List<Account> accounts =[Select Name, NumberOfEmployees
+			from Account
+			Where Name Like 'U%' AND NumberOfEmployees >= 10000];
+for (Account currentAccount :accounts){
+	String Name = currentAccount.Name;
+	Integer EmpNumber = currentAccount.NumberOfEmployees;
+	System.debug(Name);
+	System.debug(EmpNumber);	
+}
+
+
+演習⑦
+Account[] accounts = [select Name,(select Name, Amount from Opportunities) from Account];
+for (Account account : accounts){
+     for (Opportunity opp : account.Opportunities){
+	system.debug(account.name+':'+opp.name+','+opp.amount);
+     }
+}
+
+
+演習⑧
+List<Contact> cons =
+	[Select Account.Name, Name from Contact Where Account.Name Like 'E%'];
+for (Contact con :cons){
+	String AccountName = con.Account.Name;
+	String Name = con.Name;
+	System.debug('会社名：' + AccountName + ',名前：' + Name);
+}
+
+
+演習⑨
+Account acc = new Account(name = 'キヤノン');
+Insert acc;
+ID accId = acc.Id;
+List<Contact> cons = new List<Contact>();
+cons.add(new Contact(
+        FirstName='ユーザ１',
+        LastName='キヤノン',
+        AccountId=accId));
+cons.add(new Contact(
+        FirstName='ユーザ２',
+        LastName='キヤノン',
+        AccountId=accId));
+insert cons;
+
+
+演習⑩
+String searchQuery = 'FIND \'AZ\' IN ALL FIELDS RETURNING  Account (Id,Name,type),Contact(name,email),Opportunity(name,StageName)';
+List<List <sObject>> searchList = search.query(searchQuery);
+List<Account> accList = ((List<Account>)searchList[0]);
+System.debug(accList.size());
+List<Contact> conList  = ((List<contact>)searchList[1]);
+System.debug(conList.size());
+List<Opportunity> optyList = ((List<Opportunity>)searchList[2]);
+System.debug(optyList.size());
+
+
+演習⑪
+System.setPassword( UserInfo.getUserId() , 'ss123456' );
+
+
+演習⑫
+■Visualforce AccountEditPage
+<apex:page standardController="Account">
+    <apex:sectionHeader title="sectionHeader - title" subtitle="sectionHeader - subtitle" />
+    <apex:form >
+        <apex:pageBlock >
+            <apex:pageBlockButtons >
+                <apex:commandButton action="{!save}" value="保存"/>
+            </apex:pageBlockButtons>
+            <apex:pageBlockSection >
+                <apex:inputField value="{!account.name}"/>
+                <apex:inputField value="{!account.industry}"/>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>
+
+
+演習⑬
+■Apex　AccountsTypeController2 
+public with sharing class AccountsTypeController2 
+{
+  // the account to retrieve
+  public Account acc2 {get; set;}
+    
+  // the maximum number of accounts to retrieve
+  public Integer max {get; set;}
+
+    // constructor
+  public AccountsTypeController2()
+  {
+    max = 5;
+    acc2 = new Account(AnnualRevenue  = 100000);
+  }
+    
+  // retrieve the accounts
+  public List<Account> getAccounts()
+  {
+    return [select id, Name, Phone, BillingState, Type, Industry, AnnualRevenue 
+            from Account 
+            where AnnualRevenue >=:acc2.AnnualRevenue
+            limit :max];
+  }
+}
+
+■Visualforce　AccountsType2
+<apex:page controller="AccountsTypeController2" showheader="false" sidebar="false" tabstyle="Account">
+    <br/>
+    <apex:form >
+        <apex:outputLabel >{!$ObjectType.Account.fields.AnnualRevenue.Label}：</apex:outputLabel>
+        <apex:inputField value="{!acc2.AnnualRevenue}"/>
+        <apex:outputLabel >表示件数：</apex:outputLabel>
+        <apex:inputText value="{!max}"/>
+        <apex:commandButton value="検索"/>
+        <apex:pageBlock title="Accounts: {!acc2.AnnualRevenue}">
+            <apex:pageBlockTable value="{!accounts}" var="acc">
+                <apex:column value="{!acc.Name}" />
+                <apex:column value="{!acc.AnnualRevenue}" />
+                <apex:column value="{!acc.BillingState}" />
+                <apex:column value="{!acc.Phone}" />
+            </apex:pageBlockTable>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>
+
+
+演習⑭
+■Apex　DynamicAccountFieldsLister2
+public class DynamicAccountFieldsLister2{
+    
+    public DynamicAccountFieldsLister2(ApexPages.StandardController controller) {
+        controller.addFields(editableFields);
+    }
+    public List<String> editableFields {
+        get {
+            if (editableFields == null) {
+                editableFields = new List<String>();
+                editableFields.add('Industry');
+                editableFields.add('AnnualRevenue');
+                editableFields.add('BillingCity');
+                editableFields.add('NumberOfEmployees');
+                editableFields.add('Rating');
+            }
+            return editableFields ;
+        }
+        private set;
+    }
+}
+
+■Visualforce　DynamicAccountFields2
+<apex:page standardController="Account" extensions="DynamicAccountFieldsLister2">
+    <apex:pageMessages /><br/>
+    <apex:form >
+        <apex:pageBlock title="Edit Account" mode="edit">
+            <apex:pageBlockButtons >
+                <apex:commandButton value="保存" action="{!save}" />
+                <apex:commandButton value="キャンセル" action="{!cancel}" />
+            </apex:pageBlockButtons>
+            <apex:pageBlockSection columns="1">
+                <apex:inputField value="{!Account.Name}"/>
+                <apex:repeat value="{!editableFields}" var="f">
+                    <apex:inputField value="{!Account[f]}"/>
+                </apex:repeat>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>
+
+
+演習⑮
+[ビルド]-[作成]-[カスタム表示ラベル]で以下を事前に設定
+「名前」	：TestValue、
+「簡単な説明」	：テストの値
+「値」		：あいうえお
+
+■Visualforce　LabelTest
+<apex:page>
+     {!$Label.TestValue} 
+</apex:page>
+
+
+演習⑯
+[ビルド]-[開発]-[静的リソース]で以下のZIPファイルを事前にアップロード
+「名前」			：Test
+「ファイル」			：ZIPファイル
+「キャッシュコントロール」	：非公開
+※ZIPファイルは「img」フォルダの中に「sample.jpg」を
+　格納し、「img」フォルダをZIP圧縮したものをアップロード
+
+■Visualforce　ImageTest
+<apex:page>
+     <apex:image url="{!URLFOR($Resource.Test, 'img/sample.jpg')}" style="width:45%;vertical-align:middle;"/>
+</apex:page>
+
+
+演習⑰
+■Apex　SearchContactController
+public with sharing class SearchContactController {
+
+    // 従業員数
+    public String filterNumberOfEmployees { get; set; }
+
+    // 検索レコード数上限
+    //private static final Integer RECORD_LIMIT = 5000;
+    // エクスポートレコード数上限（基本情報）
+    //private static final Integer EXPORT_LIMIT = 1000;         
+    
+    // 検索結果リスト
+    public List<Contact> contactList{get; private set;}                 
+    
+    // 検索条件: 取引先名
+    public String filterAccountName{get; set;}      
+    // 検索条件: 取引先　部門
+    public String filterAccountSite{get; set;}      
+    // 検索条件：都道府県(請求先)
+    public String filterAccountBillingState{get; set;}
+    // 検索条件：電話
+    public String filterAccountPhone{get; set;}
+    // 検索条件：種別
+    public String filterAccountType{get; set;} 
+    // 検索条件：名前
+    public String filterName{get; set;}
+    // 検索条件：役職
+    public String filterTitle{get; set;} 
+    // 検索条件：電話（個人）
+    public String filterPhone{get; set;} 
+
+    
+    // 選択リスト：種別
+    public SelectOption[] optionListAccountType{get; set;}           
+        
+    // 検索条件内部保持: 取引先名
+    private String condAccountName = '';    
+    // 検索条件内部保持: 取引先　部門
+    private String condAccountSite = '';      
+    // 検索条件内部保持: 都道府県(請求先)
+    private String condAccountBillingState = '';
+    // 検索条件内部保持: 電話
+    private String condAccountPhone = '';  
+    // 検索条件内部保持: 名前
+    private String condName = '';  
+    // 検索条件内部保持: 役職
+    private String condTitle = '';  
+    // 検索条件内部保持: 電話（個人）
+    private String condPhone = '';  
+    
+    // 検索条件内部保持: 従業員数
+    private Integer condNumberOfEmployees;
+           
+    // ソート条件
+    private String sortDir = 'ASC';
+    // ヘッダー名;
+    private String sortExp = 'Account.Name';
+
+    // 1ページあたり表示件数            
+    public static final Integer PAGE_SIZE = 5;     
+    // 改ページ: 表示中ページ番号
+    public Integer currentPage{get; set;}
+    // 改ページ: 最大ページ番号
+    public Integer fromCount{get; set;}
+    // 改ページ: from 表示件数
+    public Integer maxPage{get; set;}
+    // 改ページ: to 表示件数
+    public Integer toCount{get; set;}           
+    // 改ページ: 次ページリンク(>, >>)が有効であるか
+    public Boolean hasNext{get; set;}
+    // 改ページ: 前ページリンク(<, <<)が有効であるか
+    public Boolean hasPrevious{get; set;}
+    // 改ページ: レコード件数
+    public Integer recordCount{get; set;}
+    
+    // ソートヘッダー生成
+    public String sortExpression {
+        get { return sortExp; }
+        set {
+            if (value == sortExp) {
+                sortDirection = (sortDirection == 'ASC') ? 'DESC' : 'ASC';
+            } else {
+                sortDirection = 'ASC';
+            }
+            sortExp = value;
+        }
+    }
+    
+    // ソート（昇順 or 降順）変更
+    public String SortDirection {
+        get {
+            if (sortExpression == null || sortExpression == '') {
+                return 'ASC';
+            } else {
+                return sortDir;
+            }
+        }
+        set {
+            sortDir = value;
+        }
+    }
+
+
+    // コンストラクタ
+    public SearchContactController() {
+        // 初期化
+        this.contactList = null;
+        // 選択リスト：種別作成
+        this.optionListAccountType = createAccountType();
+        // ★演習用追加コード
+        search();
+    }
+    
+    // 検索ボタン押下時の処理
+    public PageReference search() {
+        // 初期化
+        this.contactList = new List<Contact>();
+        
+        this.currentPage  = 1;
+        this.maxPage      = 1;
+        this.recordCount  = 0;
+        
+        this.fromCount  = 1;
+        this.toCount  = 1 * PAGE_SIZE;
+        System.debug('★' + this.toCount);
+        
+        this.contactList = searchRecords();
+        
+        return null;
+    }
+    
+    // 取引先情報検索処理
+    public List<Contact> searchRecords() {
+        // クエリ文字列
+        String strQuery = null;
+        
+        // クエリ文の生成
+        strQuery = createQuery();
+        
+        System.debug(strQuery);
+        
+        Contact[] ret = null;
+        // ページ遷移用コントローラー
+        ApexPages.StandardSetController ssc = null;
+        
+        try{
+            ssc = new ApexPages.StandardSetController(Database.getQueryLocator(strQuery));
+            ssc.setPageSize(PAGE_SIZE);
+            this.recordCount = ssc.getResultSize();
+            this.maxPage     = this.recordCount == 0 ? 0 : (this.recordCount - 1) / PAGE_SIZE + 1;
+            this.currentPage = math.min(this.maxPage, math.max(1, this.currentPage));
+            ssc.setPageNumber(this.currentPage);
+            this.hasPrevious = ssc.getHasPrevious();
+            this.hasNext     = ssc.getHasNext();
+            contactList = ssc.getRecords();
+
+        
+            // 検索処理実行
+            //contactList = database.query(strQuery);
+        }catch(Exception ex){
+
+        }
+    
+        return contactList;
+    }
+    
+    // 取引先と取引先責任者検索用のクエリーを生成
+    public String createQuery() {
+        String strQuery =    'SELECT '
+            +     'Account.Id, '
+            +     'Account.Name, '
+            +     'Account.Site, '
+            +     'Account.BillingState, '
+            +     'Account.Phone, '
+            +     'Account.Type, '
+            +     'Account.NumberOfEmployees, '            
+            +     'Id, '
+            +     'Name, '
+            +     'Title, '
+            +     'Phone, '
+            +     'Email, '
+            +     'LastModifiedById, '
+            +     'LastModifiedBy.Name, '
+            +     'LastModifiedDate '
+            + 'FROM Contact';
+
+        // 検索条件の文字列
+        String strWhere = '';
+
+        // 検索条件：取引先名
+        if (String.isNotBlank( filterAccountName )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+        condAccountName = '%' + escape(filterAccountName) + '%';
+        strWhere += 'Account.Name LIKE :condAccountName';
+        }
+        
+        // 検索条件：取引先 部門
+        if (String.isNotBlank( filterAccountSite )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+        condAccountSite = '%' + escape(filterAccountSite) + '%';
+        strWhere += 'Account.Site LIKE :condAccountSite';
+        }
+        
+        // 検索条件：都道府県(請求先)
+        if (String.isNotBlank( filterAccountBillingState )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+        condAccountBillingState = '%' + escape(filterAccountBillingState) + '%';
+        strWhere += 'Account.BillingState LIKE :condAccountBillingState';
+        }
+        // 検索条件：電話
+        if (String.isNotBlank( filterAccountPhone )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+        condAccountPhone = '%' + escape(filterAccountPhone ) + '%';
+        strWhere += 'Account.Phone LIKE :condAccountPhone';
+        }
+         // 検索条件：種別
+        if (String.isNotBlank( filterAccountType )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+            strWhere += 'Account.Type = :filterAccountType';
+        }
+        // 検索条件：名前
+        if (String.isNotBlank( filterName )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+        condName = '%' + escape(filterName ) + '%';
+        strWhere += 'Name LIKE :condName';
+        }
+        // 検索条件：役職
+        if (String.isNotBlank( filterTitle )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+        condTitle = '%' + escape(filterTitle ) + '%';
+        strWhere += 'Title LIKE :condTitle';
+        }
+        // 検索条件：電話（個人）
+        if (String.isNotBlank( filterPhone )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+        condPhone = '%' + escape(filterPhone ) + '%';
+        strWhere += 'Phone LIKE :condPhone';
+        }
+        
+        // 検索条件：従業員数
+        if (String.isNotBlank( filterNumberOfEmployees )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+        condNumberOfEmployees = Integer.Valueof(filterNumberOfEmployees);
+        strWhere += 'Account.NumberOfEmployees >= :condNumberOfEmployees';
+        }
+                
+        // 検索条件設定
+        strQuery += strWhere;
+        
+        // ソート条件設定
+        strQuery += getSortCriteria();
+
+        return strQuery;
+    }
+
+    // 列ラベルクリック時に、ページから渡されたソート条件をWhere句用に整形する
+    private String getSortCriteria() {
+        // 列ラベルクリック時に、ページから渡されたソート条件をWhere句用に整形する
+        String ret = '';
+        String sortFullExp = 'CreatedDate ' + sortDirection;    // 毎回同じ順番にするため、CreatedDateの指定は常に使用する
+        if (sortExpression != null && sortExpression != '') {
+            sortFullExp = sortExpression + ' ' + sortDirection + ', ' + sortFullExp;    // CreatedDateの指定より先に追加する
+        }
+        
+        return ' ORDER BY ' + sortFullExp;
+    }
+    
+    // ヘッダーリンク押下時のソート処理
+    public PageReference doSort() {
+        this.contactList = searchRecords();
+        return null;
+    }
+    
+    // プルダウンリスト：種別
+    private SelectOption[] createAccountType() {
+        SelectOption[] ret = new SelectOption[] {
+          new SelectOption('', 'すべて')
+        };
+        for (Schema.PicklistEntry p : Account.Type.getDescribe().getPicklistValues()) {
+          ret.add(new SelectOption(p.getValue(), p.getLabel()));
+        }
+        return ret;
+    }
+    
+    // 新規
+    public PageReference moveNewPage() {
+        PageReference newPage = Page.AccountInput;
+        return newPage;
+    }
+    
+    // 改ページ
+    public PageReference doMoveToPage() {
+        this.contactList = searchRecords();
+        
+        this.fromCount = (this.currentPage -1) * PAGE_SIZE + 1;
+        if( (this.currentPage) * PAGE_SIZE > recordCount ){
+            this.toCount = recordCount;
+        }else{
+            this.toCount = (this.currentPage) * PAGE_SIZE;
+        }
+
+        return null;
+    }
+    // 初回ページ遷移
+    public PageReference doFirstPage() {
+        this.currentPage = 1;
+        return doMoveToPage();
+    }
+    // 次ページ遷移
+    public PageReference doNextPage() {
+        this.currentPage = this.currentPage + 1;
+        return doMoveToPage();
+    }
+    // 前ページ遷移
+    public PageReference doPrevPage() {
+        this.currentPage = this.currentPage - 1;
+        return doMoveToPage();
+    }
+    // 最終ページ遷移
+    public PageReference doLastPage() {
+        this.currentPage = (this.recordCount - 1) / PAGE_SIZE + 1;
+        return doMoveToPage();
+    }
+    
+    // HTML特殊文字変換
+    private String escape(String val) {
+        // LIKE句で使用用に%, _を\%, \_に置換する
+        // (全角の％, ＿も置換する必要がある)
+        // (シングルクォートはエスケープ不要)
+        return val.replace('%', '\\%').replace('_', '\\_').replace('％', '\\％').replace('＿', '\\＿');
+    }
+    
+}
+
+
+演習⑱
+■Apex　SearchContactController
+public with sharing class SearchContactController {
+
+    //★★演習用追加コード　従業員数
+    public String filterNumberOfEmployees { get; set; }
+
+    // 検索レコード数上限
+    //private static final Integer RECORD_LIMIT = 5000;
+    // エクスポートレコード数上限（基本情報）
+    //private static final Integer EXPORT_LIMIT = 1000;         
+    
+    // 検索結果リスト
+    public List<Contact> contactList{get; private set;}                 
+    
+    // 検索条件: 取引先名
+    public String filterAccountName{get; set;}      
+    // 検索条件: 取引先　部門
+    public String filterAccountSite{get; set;}      
+    // 検索条件：都道府県(請求先)
+    public String filterAccountBillingState{get; set;}
+    // 検索条件：電話
+    public String filterAccountPhone{get; set;}
+    // 検索条件：種別
+    public String filterAccountType{get; set;} 
+    // 検索条件：名前
+    public String filterName{get; set;}
+    // 検索条件：役職
+    public String filterTitle{get; set;} 
+    // 検索条件：電話（個人）
+    public String filterPhone{get; set;} 
+
+    
+    // 選択リスト：種別
+    public SelectOption[] optionListAccountType{get; set;}           
+        
+    // 検索条件内部保持: 取引先名
+    private String condAccountName = '';    
+    // 検索条件内部保持: 取引先　部門
+    private String condAccountSite = '';      
+    // 検索条件内部保持: 都道府県(請求先)
+    private String condAccountBillingState = '';
+    // 検索条件内部保持: 電話
+    private String condAccountPhone = '';  
+    // 検索条件内部保持: 名前
+    private String condName = '';  
+    // 検索条件内部保持: 役職
+    private String condTitle = '';  
+    // 検索条件内部保持: 電話（個人）
+    private String condPhone = '';  
+    
+    //★演習用追加コード　検索条件内部保持: 従業員数
+    private Integer condNumberOfEmployees;
+           
+    // ソート条件
+    private String sortDir = 'ASC';
+    // ヘッダー名;
+    private String sortExp = 'Account.Name';
+
+    // 1ページあたり表示件数            
+    public static final Integer PAGE_SIZE = 5;     
+    // 改ページ: 表示中ページ番号
+    public Integer currentPage{get; set;}
+    // 改ページ: 最大ページ番号
+    public Integer fromCount{get; set;}
+    // 改ページ: from 表示件数
+    public Integer maxPage{get; set;}
+    // 改ページ: to 表示件数
+    public Integer toCount{get; set;}           
+    // 改ページ: 次ページリンク(>, >>)が有効であるか
+    public Boolean hasNext{get; set;}
+    // 改ページ: 前ページリンク(<, <<)が有効であるか
+    public Boolean hasPrevious{get; set;}
+    // 改ページ: レコード件数
+    public Integer recordCount{get; set;}
+    
+    // ソートヘッダー生成
+    public String sortExpression {
+        get { return sortExp; }
+        set {
+            if (value == sortExp) {
+                sortDirection = (sortDirection == 'ASC') ? 'DESC' : 'ASC';
+            } else {
+                sortDirection = 'ASC';
+            }
+            sortExp = value;
+        }
+    }
+    
+    // ソート（昇順 or 降順）変更
+    public String SortDirection {
+        get {
+            if (sortExpression == null || sortExpression == '') {
+                return 'ASC';
+            } else {
+                return sortDir;
+            }
+        }
+        set {
+            sortDir = value;
+        }
+    }
+
+
+    // コンストラクタ
+    public SearchContactController() {
+        // 初期化
+        this.contactList = null;
+        // 選択リスト：種別作成
+        this.optionListAccountType = createAccountType();
+        
+        search();
+    }
+    
+    // 検索ボタン押下時の処理
+    public PageReference search() {
+        // 初期化
+        this.contactList = new List<Contact>();
+        
+        this.currentPage  = 1;
+        this.maxPage      = 1;
+        this.recordCount  = 0;
+        
+        this.fromCount  = 1;
+        this.toCount  = 1 * PAGE_SIZE;
+        System.debug('★' + this.toCount);
+        
+        this.contactList = searchRecords();
+        
+        return null;
+    }
+    
+    // 取引先情報検索処理
+    public List<Contact> searchRecords() {
+        // クエリ文字列
+        String strQuery = null;
+        
+        // クエリ文の生成
+        strQuery = createQuery();
+        
+        System.debug(strQuery);
+        
+        Contact[] ret = null;
+        // ページ遷移用コントローラー
+        ApexPages.StandardSetController ssc = null;
+        
+        try{
+            ssc = new ApexPages.StandardSetController(Database.getQueryLocator(strQuery));
+            ssc.setPageSize(PAGE_SIZE);
+            this.recordCount = ssc.getResultSize();
+            this.maxPage     = this.recordCount == 0 ? 0 : (this.recordCount - 1) / PAGE_SIZE + 1;
+            this.currentPage = math.min(this.maxPage, math.max(1, this.currentPage));
+            ssc.setPageNumber(this.currentPage);
+            this.hasPrevious = ssc.getHasPrevious();
+            this.hasNext     = ssc.getHasNext();
+            contactList = ssc.getRecords();
+
+        
+            // 検索処理実行
+            //contactList = database.query(strQuery);
+        }catch(Exception ex){
+
+        }
+    
+        return contactList;
+    }
+    
+    // 取引先と取引先責任者検索用のクエリーを生成
+    public String createQuery() {
+        String strQuery =    'SELECT '
+            +     'Account.Id, '
+            +     'Account.Name, '
+            +     'Account.Site, '
+            +     'Account.BillingState, '
+            +     'Account.Phone, '
+            +     'Account.Type, '
+            //★演習用追加コード
+            +     'Account.NumberOfEmployees, '   
+                     
+            +     'Id, '
+            +     'Name, '
+            +     'Title, '
+            +     'Phone, '
+            +     'Email, '
+            +     'LastModifiedById, '
+            +     'LastModifiedBy.Name, '
+            +     'LastModifiedDate '
+            + 'FROM Contact';
+
+        // 検索条件の文字列
+        String strWhere = '';
+
+        // 検索条件：取引先名
+        if (String.isNotBlank( filterAccountName )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+        condAccountName = '%' + escape(filterAccountName) + '%';
+        strWhere += 'Account.Name LIKE :condAccountName';
+        }
+        
+        // 検索条件：取引先 部門
+        if (String.isNotBlank( filterAccountSite )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+        condAccountSite = '%' + escape(filterAccountSite) + '%';
+        strWhere += 'Account.Site LIKE :condAccountSite';
+        }
+        
+        // 検索条件：都道府県(請求先)
+        if (String.isNotBlank( filterAccountBillingState )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+        condAccountBillingState = '%' + escape(filterAccountBillingState) + '%';
+        strWhere += 'Account.BillingState LIKE :condAccountBillingState';
+        }
+        // 検索条件：電話
+        if (String.isNotBlank( filterAccountPhone )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+        condAccountPhone = '%' + escape(filterAccountPhone ) + '%';
+        strWhere += 'Account.Phone LIKE :condAccountPhone';
+        }
+         // 検索条件：種別
+        if (String.isNotBlank( filterAccountType )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+            strWhere += 'Account.Type = :filterAccountType';
+        }
+        // 検索条件：名前
+        if (String.isNotBlank( filterName )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+        condName = '%' + escape(filterName ) + '%';
+        strWhere += 'Name LIKE :condName';
+        }
+        // 検索条件：役職
+        if (String.isNotBlank( filterTitle )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+        condTitle = '%' + escape(filterTitle ) + '%';
+        strWhere += 'Title LIKE :condTitle';
+        }
+        // 検索条件：電話（個人）
+        if (String.isNotBlank( filterPhone )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+        condPhone = '%' + escape(filterPhone ) + '%';
+        strWhere += 'Phone LIKE :condPhone';
+        }
+        
+        //★演習用追加コード　検索条件：従業員数
+        if (String.isNotBlank( filterNumberOfEmployees )) {
+            if (strWhere != '') {
+                strWhere += ' AND ';
+        } else {
+            strWhere += ' WHERE ';
+        }
+        condNumberOfEmployees = Integer.Valueof(filterNumberOfEmployees);
+        strWhere += 'Account.NumberOfEmployees >= :condNumberOfEmployees';
+        }
+                
+        // 検索条件設定
+        strQuery += strWhere;
+        
+        // ソート条件設定
+        strQuery += getSortCriteria();
+
+        return strQuery;
+    }
+
+    // 列ラベルクリック時に、ページから渡されたソート条件をWhere句用に整形する
+    private String getSortCriteria() {
+        // 列ラベルクリック時に、ページから渡されたソート条件をWhere句用に整形する
+        String ret = '';
+        String sortFullExp = 'CreatedDate ' + sortDirection;    // 毎回同じ順番にするため、CreatedDateの指定は常に使用する
+        if (sortExpression != null && sortExpression != '') {
+            //★演習用追加コード NULL値は最後になるように修正
+            if(sortExpression == 'Account.NumberOfEmployees')
+            {
+                sortFullExp = sortExpression + ' ' + sortDirection + ' NULLS LAST, ' + sortFullExp;    // CreatedDateの指定より先に追加する
+            }else{
+                sortFullExp = sortExpression + ' ' + sortDirection + ', ' + sortFullExp;    // CreatedDateの指定より先に追加する
+            }
+        }
+        
+        return ' ORDER BY ' + sortFullExp;
+        
+    }
+    
+    // ヘッダーリンク押下時のソート処理
+    public PageReference doSort() {
+        this.contactList = searchRecords();
+        return null;
+    }
+    
+    // プルダウンリスト：種別
+    private SelectOption[] createAccountType() {
+        SelectOption[] ret = new SelectOption[] {
+          new SelectOption('', 'すべて')
+        };
+        for (Schema.PicklistEntry p : Account.Type.getDescribe().getPicklistValues()) {
+          ret.add(new SelectOption(p.getValue(), p.getLabel()));
+        }
+        return ret;
+    }
+    
+    // 新規
+    public PageReference moveNewPage() {
+        PageReference newPage = Page.AccountInput;
+        return newPage;
+    }
+    
+    // 改ページ
+    public PageReference doMoveToPage() {
+        this.contactList = searchRecords();
+        
+        this.fromCount = (this.currentPage -1) * PAGE_SIZE + 1;
+        if( (this.currentPage) * PAGE_SIZE > recordCount ){
+            this.toCount = recordCount;
+        }else{
+            this.toCount = (this.currentPage) * PAGE_SIZE;
+        }
+
+        return null;
+    }
+    // 初回ページ遷移
+    public PageReference doFirstPage() {
+        this.currentPage = 1;
+        return doMoveToPage();
+    }
+    // 次ページ遷移
+    public PageReference doNextPage() {
+        this.currentPage = this.currentPage + 1;
+        return doMoveToPage();
+    }
+    // 前ページ遷移
+    public PageReference doPrevPage() {
+        this.currentPage = this.currentPage - 1;
+        return doMoveToPage();
+    }
+    // 最終ページ遷移
+    public PageReference doLastPage() {
+        this.currentPage = (this.recordCount - 1) / PAGE_SIZE + 1;
+        return doMoveToPage();
+    }
+    
+    // HTML特殊文字変換
+    private String escape(String val) {
+        // LIKE句で使用用に%, _を\%, \_に置換する
+        // (全角の％, ＿も置換する必要がある)
+        // (シングルクォートはエスケープ不要)
+        return val.replace('%', '\\%').replace('_', '\\_').replace('％', '\\％').replace('＿', '\\＿');
+    }
+    
+}
+
+■Visualforce　SearchContact
+<apex:page controller="SearchContactController" title="取引先情報検索" tabStyle="SearchContact__tab" sidebar="false">
+    <script>
+    // Enterキー押下時に検索処理を行う
+    function ignoreEnterKey(e){
+        if ((window.event&&window.event.keyCode==13) || e.which==13) {
+            searchRecs();
+            return false;
+        } else {
+            return true;
+        }
+    }
+    </script>
+
+    <apex:sectionHeader title="取引先情報検索"/>
+    <apex:pageBlock id="blockMain" title="検索条件">
+        <apex:form id="formMain" style="margin-bottom: 10px;">
+            <apex:actionFunction name="searchRecs" action="{!search}" reRender="searchResult" status="searchStatus"/>
+            <table width="920px" border="0" cellspacing="1" cellpadding="0" style="margin: 0px 0px 0px 0px;">
+                <tr>
+                    <td class="title01" width="150px">
+                        <apex:outputLabel value="取引先名" for="accountName" />
+                    </td>
+                    <td class="input02" style="text-align: left;" width="240px">
+                        <apex:inputText value="{!filterAccountName}" style="width: 120px;" onkeyup="ignoreEnterKey(event);"/>
+                    </td>
+                    
+                    <td class="title01" width="100px">
+                        <apex:outputLabel value="取引先 部門" for="accountSite" />
+                    </td>
+                    <td class="input02" style="text-align: left;" width="240px">
+                        <apex:inputText value="{!filterAccountSite}" style="width: 120px;" onkeyup="ignoreEnterKey(event);"/>
+                    </td>
+                    
+                    <td class="title01" width="150px">
+                        <apex:outputLabel value="都道府県(請求先)" for="accountBillingState" />
+                    </td>
+                    <td class="input02" style="text-align: left;" width="240px">
+                        <apex:inputText value="{!filterAccountBillingState}" style="width: 120px;" onkeyup="ignoreEnterKey(event);"/>
+                    </td>
+                    
+                    <td class="title01" width="200px">
+                        <apex:outputLabel value="電話" for="accountPhone" />
+                    </td>
+                    <td class="input02" style="text-align: left;" width="240px">
+                        <apex:inputText value="{!filterAccountPhone}" style="width: 120px;" onkeyup="ignoreEnterKey(event);"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="title01" width="150px">
+                        <apex:outputLabel value="種別" for="accountType" />
+                    </td>
+                    <td class="input02" style="text-align: left;" width="240px">
+                        <apex:selectList value="{!filterAccountType}" size="1" >
+                            <apex:selectOptions value="{!optionListAccountType}"/>
+                        </apex:selectList>
+                    </td>
+                    
+                    <td class="title01" width="100px">
+                        <apex:outputLabel value="名前" for="name" />
+                    </td>
+                    <td class="input02" style="text-align: left;" width="240px">
+                        <apex:inputText value="{!filterName}" style="width: 120px;" onkeyup="ignoreEnterKey(event);"/>
+                    </td>
+                    
+                    <td class="title01" width="100px">
+                        <apex:outputLabel value="役職" for="title" />
+                    </td>
+                    <td class="input02" style="text-align: left;" width="240px">
+                        <apex:inputText value="{!filterTitle}" style="width: 120px;" onkeyup="ignoreEnterKey(event);"/>
+                    </td>
+                    
+                    <td class="title01" width="200px">
+                        <apex:outputLabel value="電話（個人）" for="phone" />
+                    </td>
+                    <td class="input02" style="text-align: left;" width="240px">
+                        <apex:inputText value="{!filterPhone}" style="width: 120px;" onkeyup="ignoreEnterKey(event);"/>
+                    </td>
+                    <!-- 演習追加コード　-->
+                    <td class="title01" width="200px">
+                        <apex:outputLabel value="従業員数" for="phone" />
+                    </td>
+                    <td class="input02" style="text-align: left;" width="240px">
+                        <apex:inputText value="{!filterNumberOfEmployees}" style="width: 120px;" onkeyup="ignoreEnterKey(event);"/>
+                    </td>
+                </tr>
+                
+                
+            </table>
+            <hr style="border-width: 1px 0px 0px 0px;border-style: solid;border-color: #cccccc;height: 1px;"/>
+            <table width="920px" border="0" cellspacing="1" cellpadding="0" style="margin: 0px 0px 10px 0px;">
+                <tr>
+                    <td style="width:10px;"></td>
+                    <td style="padding: 0px 0px 0px 0px;">
+                        <apex:commandButton id="search" value=" 検索 "  action="{!search}" reRender="searchResult" status="searchStatus" style="font-size:14px;"/>
+                    </td>
+                </tr>
+            </table>
+        </apex:form>
+    </apex:pageBlock>
+    
+    <apex:actionStatus startText="データの検索中..." stopText="" id="searchStatus" />
+    
+    <apex:outputPanel id="searchResult">
+        <apex:pageBlock title="検索結果" rendered="{!(contactList.size == 0)}">
+        該当するデータはありません。
+        </apex:pageBlock>
+        <apex:pageBlock title="検索結果" rendered="{!contactList.size != 0 && !ISNULL(contactList)}">
+            <apex:form id="searchcriteria">
+                <!-- 【ページング表示部】 -->
+                <table class="page-table" style="width: 100%;">
+                    <tr>
+                        <td style="width:5px;"></td>
+                        <td><apex:commandButton id="search" value=" 新規 "  action="{!moveNewPage}" style="font-size:14px;"/> </td>
+                        
+                        <td class="search-count">
+                            検索件数: {!recordCount} 件&nbsp;&nbsp;&nbsp;
+                            <apex:commandButton value=" << " action="{!doFirstPage}" rerender="searchResult" disabled="{!!hasPrevious}"/>
+                            <apex:commandButton value=" < "  action="{!doPrevPage}"  rerender="searchResult" disabled="{!!hasPrevious}"/>
+                            <apex:commandButton value=" > "  action="{!doNextPage}"  rerender="searchResult" disabled="{!!hasNext}"/>
+                            <apex:commandButton value=" >> " action="{!doLastPage}"  rerender="searchResult" disabled="{!!hasNext}"/>
+                            &nbsp;&nbsp;&nbsp;{!fromCount} ～ {!toCount} 件
+                        </td>
+                    </tr>
+                </table>
+            
+                <!-- 【検索結果一覧表示部】 -->
+                <apex:pageBlockTable value="{!contactList}" var="contacts" id="contactList">
+                    <!-- 取引先名 -->
+                    <apex:column >
+                        <apex:outputLink value="/{!contacts.Account.Id}">{!contacts.Account.Name}</apex:outputLink>
+                        <apex:facet name="header">
+                            <apex:commandLink action="{!doSort}" value="{!$ObjectType.Account.fields.Name.Label +  IF(sortExpression='Account.Name', IF(sortDirection='ASC', '↑','↓'),'')}" rerender="contactList">
+                                <apex:param value="Account.Name" name="column" assignTo="{!sortExpression}" />
+                            </apex:commandLink>
+                        </apex:facet>
+                    </apex:column>
+                    
+                    <!-- 取引先 部門 -->
+                    <apex:column value="{!contacts.Account.Site}">
+                        <apex:facet name="header">
+                            <apex:commandLink action="{!doSort}" value="{!$ObjectType.Account.fields.Site.Label +  IF(sortExpression='Account.Site', IF(sortDirection='ASC', '↑','↓'),'')}" rerender="contactList">
+                                <apex:param value="Account.Site" name="column" assignTo="{!sortExpression}" />
+                            </apex:commandLink>
+                        </apex:facet>
+                    </apex:column>
+
+                    <!-- 都道府県（請求先） -->
+                    <apex:column value="{!contacts.Account.BillingState}">
+                        <apex:facet name="header">
+                            <apex:commandLink action="{!doSort}" value="{!$ObjectType.Account.fields.BillingState.Label +  IF(sortExpression='Account.BillingState', IF(sortDirection='ASC', '↑','↓'),'')}" rerender="contactList">
+                                <apex:param value="Account.BillingState" name="column" assignTo="{!sortExpression}" />
+                            </apex:commandLink>
+                        </apex:facet>
+                    </apex:column>
+                    
+                    <!-- 電話 -->
+                    <apex:column value="{!contacts.Account.Phone}">
+                        <apex:facet name="header">
+                            <apex:commandLink action="{!doSort}" value="{!$ObjectType.Account.fields.Phone.Label +  IF(sortExpression='Account.Phone', IF(sortDirection='ASC', '↑','↓'),'')}" rerender="contactList">
+                                <apex:param value="Account.Phone" name="column" assignTo="{!sortExpression}" />
+                            </apex:commandLink>
+                        </apex:facet>
+                    </apex:column>
+
+                    <!-- 種別 -->
+                    <apex:column value="{!contacts.Account.Type}">
+                        <apex:facet name="header">
+                            <apex:commandLink action="{!doSort}" value="{!$ObjectType.Account.fields.Type.Label +  IF(sortExpression='Account.Type', IF(sortDirection='ASC', '↑','↓'),'')}" rerender="contactList">
+                                <apex:param value="Account.Type" name="column" assignTo="{!sortExpression}" />
+                            </apex:commandLink>
+                        </apex:facet>
+                    </apex:column>
+
+                    <!-- 名前 -->
+                    <apex:column value="{!contacts.Name}">
+                        <apex:facet name="header">
+                            <apex:commandLink action="{!doSort}" value="{!$ObjectType.Contact.fields.Name.Label +  IF(sortExpression='Name', IF(sortDirection='ASC', '↑','↓'),'')}" rerender="contactList">
+                                <apex:param value="Name" name="column" assignTo="{!sortExpression}" />
+                            </apex:commandLink>
+                        </apex:facet>
+                    </apex:column>
+                    
+                    <!-- 役職 -->
+                    <apex:column value="{!contacts.Title}">
+                        <apex:facet name="header">
+                            <apex:commandLink action="{!doSort}" value="{!$ObjectType.Contact.fields.Title.Label +  IF(sortExpression='Title', IF(sortDirection='ASC', '↑','↓'),'')}" rerender="contactList">
+                                <apex:param value="Title" name="column" assignTo="{!sortExpression}" />
+                            </apex:commandLink>
+                        </apex:facet>
+                    </apex:column>
+
+                    <!-- 電話 -->
+                    <apex:column value="{!contacts.Phone}">
+                        <apex:facet name="header">
+                            <apex:commandLink action="{!doSort}" value="{!$ObjectType.Contact.fields.Phone.Label +  IF(sortExpression='Phone', IF(sortDirection='ASC', '↑','↓'),'')}" rerender="contactList">
+                                <apex:param value="Phone" name="column" assignTo="{!sortExpression}" />
+                            </apex:commandLink>
+                        </apex:facet>
+                    </apex:column>
+                    
+                    <!-- 演習追加コード　従業員数 -->
+                    <apex:column value="{!contacts.Account.NumberOfEmployees}">
+                        <apex:facet name="header">
+                            <apex:commandLink action="{!doSort}" value="{!$ObjectType.Account.fields.NumberOfEmployees.Label +  IF(sortExpression='Account.NumberOfEmployees', IF(sortDirection='ASC', '↑','↓'),'')}" rerender="contactList">
+                                <apex:param value="Account.NumberOfEmployees" name="column" assignTo="{!sortExpression}" />
+                            </apex:commandLink>
+                        </apex:facet>
+                    </apex:column>
+
+                </apex:pageBlockTable>
+            </apex:form>
+        </apex:pageBlock>
+    </apex:outputPanel>
+</apex:page>
