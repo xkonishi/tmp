@@ -1,0 +1,200 @@
+①Visualforceの作成（P123）
+■Visualforce　HelloWorld
+<apex:page >
+    <b>Hello World!</b>
+</apex:page>
+
+
+②StandardController（P138）
+■Visualforce　ContactEditPage
+<apex:page standardController="Contact" sidebar="false">
+  <apex:sectionHeader title="取引先責任者の編集" subtitle="{!contact.name}" />
+  <apex:form >
+    <apex:pageBlock mode="mainDetail">
+      <apex:pageBlockButtons >
+        <apex:commandButton value="保存" action="{!save}" />
+        <apex:commandButton value="キャンセル" action="{!cancel}" />
+      </apex:pageBlockButtons>
+      <apex:pageBlockSection columns="2" title="Name">
+        <apex:inputField value="{!Contact.Salutation}"/>
+        <apex:inputField value="{!Contact.FirstName}"/>
+        <apex:inputField value="{!Contact.LastName}"/>
+      </apex:pageBlockSection>
+      <apex:pageBlockSection columns="1" title="Channels">
+        <apex:inputField value="{!contact.phone}" />
+        <apex:inputField value="{!contact.doNotCall}" />
+        <apex:inputField value="{!contact.email}" />
+        <apex:inputField value="{!contact.hasOptedOutOfEmail}" />
+        <apex:inputField value="{!contact.fax}" />
+        <apex:inputField value="{!contact.hasOptedOutOfFax}" />
+      </apex:pageBlockSection>
+    </apex:pageBlock>
+  </apex:form>
+</apex:page>
+
+
+③カスタムコントローラー（P146～147）
+■Apex　AccountsTypeController
+public with sharing class AccountsTypeController 
+{
+  // the account to retrieve
+  public Account acc2 {get; set;}
+    
+  // the maximum number of accounts to retrieve
+  public Integer max {get; set;}
+
+    // constructor
+  public AccountsTypeController()
+  {
+    max = 5;
+    acc2 = new Account(Type = 'Customer - Channel');
+  }
+    
+  // retrieve the accounts
+  public List<Account> getAccounts()
+  {
+    return [select id, Name, Phone, BillingState, Type, Industry, AnnualRevenue 
+            from Account 
+            where Type=:acc2.Type 
+            limit :max];
+  }
+}
+
+■Visualforce　AccountsType
+<apex:page controller="AccountsTypeController" showheader="false" sidebar="false" tabstyle="Account">
+    <br/>
+    <apex:form >
+        <apex:outputLabel >種別：</apex:outputLabel>
+        <apex:inputField value="{!acc2.Type}"/>
+        <apex:outputLabel >表示件数：</apex:outputLabel>
+        <apex:inputText value="{!max}"/>
+        <apex:commandButton value="検索"/>
+        <apex:pageBlock title="Accounts: Customer - Channel">
+            <apex:pageBlockTable value="{!accounts}" var="acc">
+                <apex:column value="{!acc.Name}" />
+                <apex:column value="{!acc.BillingState}" />
+                <apex:column value="{!acc.Phone}" />
+            </apex:pageBlockTable>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>
+
+
+④<apex:detail/>タグ（P157）
+■Visualforce　detail
+<apex:page standardController="Account">
+    <apex:detail subject="{!account.Id}" relatedList="false" inlineEdit="true" />
+</apex:page>
+
+
+⑤<apex:relatedList/>タグ（P158）
+■Visualforce　relatedList
+<apex:page standardController="Account">
+    <apex:relatedList list="Contacts" title="得意先担当者">
+    </apex:relatedList>
+</apex:page>
+
+
+⑥<apex:listViews/>タグ（P159）
+■Visualforce　listViews
+<apex:page showHeader="true" tabstyle="Account">
+    <apex:ListViews type="Case" />
+    <apex:ListViews type="Account" />
+</apex:page>
+
+
+⑦<apex:enhancedList/>タグ（P160）
+■Visualforce　enhancedList
+<apex:page standardController="Account" >
+    <apex:enhancedList type="Account" height="300" rowsPerPage="10" id="AccountList" />
+</apex:page>
+
+
+⑧拡張コントローラー（P163～164）
+■Apex　DynamicAccountFieldsLister
+public class DynamicAccountFieldsLister{
+    
+    public DynamicAccountFieldsLister(ApexPages.StandardController controller) {
+        controller.addFields(editableFields);
+    }
+    public List<String> editableFields {
+        get {
+            if (editableFields == null) {
+                editableFields = new List<String>();
+                editableFields.add('Industry');
+                editableFields.add('AnnualRevenue');
+                editableFields.add('BillingCity');
+            }
+            return editableFields ;
+        }
+        private set;
+    }
+}
+
+■Visualforce　DynamicAccountFields
+<apex:page standardController="Account" extensions="DynamicAccountFieldsLister">
+    <apex:pageMessages /><br/>
+    <apex:form >
+        <apex:pageBlock title="Edit Account" mode="edit">
+            <apex:pageBlockButtons >
+                <apex:commandButton value="保存" action="{!save}" />
+                <apex:commandButton value="キャンセル" action="{!cancel}" />
+            </apex:pageBlockButtons>
+            <apex:pageBlockSection columns="1">
+                <apex:inputField value="{!Account.Name}"/>
+                <apex:repeat value="{!editableFields}" var="f">
+                    <apex:inputField value="{!Account[f]}"/>
+                </apex:repeat>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>
+
+
+⑨Apexトリガーの作成（P179～180）
+■Apex　ContactTriggerHandler
+public class ContactTriggerHandler {
+    public static void handleContactInsertTrigger(List<Contact> contacts) {
+        List<Event> events = new List<Event>();
+        for(Contact c: contacts){
+            Event event = new Event();
+            // 任命先
+            event.OwnerId = UserInfo.getUserId();
+            // 終日行動
+            event.IsAllDayEvent = true;
+            // 開始
+            event.StartDateTime = System.today();
+            // 終了
+            event.EndDateTime = System.today() + 5;
+            // 名前
+            event.WhoId = c.Id;
+            // 件名
+            event.Subject = 'ご挨拶';
+            // 説明
+            event.Description = 'お客様先訪問 or メール（５日以内）';
+            
+            // リストへの行動追加
+            events.add(event);
+        }
+        // 行動レコード一括作成
+        insert events;
+    }
+}
+
+■ApexTrigger　ContactTrigger
+trigger ContactTrigger on Contact (before insert,before update,after insert,after update) {
+    if(Trigger.isBefore){
+        //レコード作成前の処理を行う
+        if(Trigger.isInsert){
+        //レコード更新前の処理を行う
+        }else if(Trigger.isUpdate){
+        }
+    }else if(Trigger.isAfter){
+        //レコード作成後の処理を行う
+        if(Trigger.isInsert){
+            ContactTriggerHandler.handleContactInsertTrigger(trigger.new);
+        //レコード更新後の処理を行う
+        }else if(Trigger.isUpdate){
+        }
+    }
+}
