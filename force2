@@ -1,0 +1,154 @@
+①SOQLとは（P.75）
+List<Account> accounts = [select Name FROM Account];
+
+
+②SOQLの使用（P.76）
+List<Account> accounts = Database.query('select Name FROM Account');
+
+
+③SOQLデータの選択（P.77）
+select Name FROM Position__c WHERE Type__c ='Part Time'
+
+
+④SOQL～ソート～（P.81）
+List<Account> accounts = [Select Name, Type from Account Order by Type asc, Name desc];
+for (Account acc : accounts){
+	System.debug('種別：' + acc.Type + ',名前：' + acc.Name);
+}
+
+
+⑤SOQL～グループ／集計①～（P.83）
+List<AggregateResult> types = [select Type, SUM(AnnualRevenue) summary from Account 
+GROUP BY Type]; 
+for (AggregateResult type : types){
+    Integer sum = Integer.valueof(type.get('summary'));    
+    system.debug('種別：' + type.get('Type') + ',年間売上：' + sum);
+} 
+
+
+⑥SOQL～グループ／集計②～（P.84）
+AggregateResult[] countries =
+	[select BillingCountry
+	from Account
+	Group by BillingCountry];
+for (AggregateResult  country : countries){
+	system.debug(country.get('BillingCountry'));
+} 
+
+
+⑦集計の対象（P.86）
+AggregateResult[] countries = [select count(name),BillingCountry from Account
+Group by BillingCountry];
+
+AggregateResult avgRevenue = [select Avg(AnnualRevenue) from Account];
+
+
+⑧集計値の名前の指定（P.87）
+AggregateResult avgRevenue = [select Avg(AnnualRevenue) from Account];
+System.debug(avgRevenue.get('expr0'));
+
+
+⑨集計値の名前の指定（P.88）
+Integer AccNum = [select count() from Account];
+System.debug('Number of accounts：'+AccNum);
+
+AggregateResult[]  counts = [select count(id),Type from Account Group by Type];
+for (AggregateResult count : counts){
+System.debug(count.get('Type') + ' has '+ count.get('expr0') + 'records.');
+}
+
+
+⑩バインドされた式と変数を使用したデータの絞り込み（P.91）
+Account[] acmes = [select Id FROM Account Where Name = :('Gene' +'Point')];
+
+Set<String> names =new Set<String> {'Dickenson plc', 'Edge Communications'} ;
+Account[] accounts = [select Id FROM Account Where Name IN :names];
+
+
+⑪SOQLのFORループ（P.93）
+for (Account currentAccount : [select Name from Account]) {
+	System.debug(currentAccount.Name);
+}
+
+for (List<Account> accounts :[select Name from Account]) {
+     for (Account currentAccount :accounts){
+          System.debug(currentAccount.Name);
+     }
+}
+
+
+⑫Apexクエリーのガバナ制限（P.94）
+AggregateResult counts = [select count(name) from Account];
+
+
+⑬標準リレーションのクエリー（親→子）（P.97）
+Account[] accounts = [select Name,(select Name from Contacts) from Account];
+for (Account account : accounts){
+     for (Contact contact : account.Contacts){
+	system.debug(account.name+':'+contact.name);
+     }
+}
+
+
+⑭標準リレーションのクエリー（P.99）
+Contact[] dickContacts = [select name, Account.name from Contact where Account.name = 'Dickenson plc'];
+for (contact currentContact : dickContacts){
+system.debug(currentContact.name);
+}
+
+
+⑮DML操作の種類①（P.104）
+Account a = new Account(Name = 'Acme', BillingCity = 'San Francisco');
+insert a;
+
+Contact c = [SELECT Account.Name FROM Contact WHERE LastName = 'Bond' LIMIT 1];
+c.Account.Name = 'salesforce.com';
+c.LastName = 'Roth';
+update c;
+update c.Account;
+
+
+⑯DML操作の種類②（P.105）
+List<Contact> contacts = [SELECT Department, Description FROM Contact WHERE Department = '○○部'];
+for (Contact contact : contacts){
+      contact.Description = '部署異動になりました。';
+}
+Contacts.add(new Contact(LastName = '山田', FirstName = '太郎'));
+upsert contacts;
+
+String accountId = '00128000004PUtQ';
+Account account = [SELECT Id FROM Account WHERE Id = :accountId];
+delete account;
+
+
+⑰2種類のApexDML操作（P.106）
+Account acc = new Account(name='キヤノン');
+Insert acc;
+System.debug('acc.id');
+
+Account acc1 = new Account(name='キヤノン１');
+Account acc2 = new Account(name='キヤノン２');
+List<Account> accs = new List<Account>{acc1, acc2};
+Database.Saveresult[] sr = database.insert(accs);
+
+
+⑱Database.SaveResult[]の構造（P.108）
+Account acc1 = new Account();
+Account acc2 = new Account(name = 'Test');
+
+List<Account> accs = new List<Account>{acc1, acc2};
+
+try{
+    Database.SaveResult[] sr = database.insert(accs, false);
+}catch(DMLException e){
+    // 例外処理
+}
+
+
+⑲SOSLの実行例（P.115）
+List<List<sObject>> results = [FIND 'United*' IN Name Fields RETURNING Account, Contact ];
+List<Account> accts = (List<Account>)results[0];
+System.debug(accts.size());
+
+List<Contact> cons = (List<Contact>)results[1];
+System.debug(cons.size());
