@@ -1,0 +1,6 @@
+(Get-Host).UI.RawUI.WindowTitle = "Windows PowerShell - " + $pwd
+
+function prompt {
+}
+
+Set-Alias grep Select-String
